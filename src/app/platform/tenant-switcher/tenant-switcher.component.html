@@ -1,0 +1,25 @@
+<div class="tenant-switcher" (appClickOutside)="isOpen.set(false)">
+  <button type="button" class="switcher-trigger" (click)="toggle()" [class.open]="isOpen()">
+    <span class="tenant-name">{{ currentTenant?.name ?? 'Select tenant' }}</span>
+    @if (currentTenant) {
+      <span class="tenant-plan">({{ currentTenant.plan }})</span>
+    }
+    <span class="chevron">▼</span>
+  </button>
+
+  @if (isOpen()) {
+    <div class="dropdown">
+      @for (t of availableTenants; track t.id) {
+        <button
+          type="button"
+          class="dropdown-item"
+          [class.active]="currentTenant?.id === t.id"
+          (click)="switchTo(t)"
+        >
+          <span>{{ t.name }}</span>
+          <span class="plan-badge">{{ t.plan }}</span>
+        </button>
+      }
+    </div>
+  }
+</div>

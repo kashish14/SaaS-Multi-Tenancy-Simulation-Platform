@@ -1,0 +1,18 @@
+<div class="header-content">
+  <div class="header-left">
+    <app-tenant-switcher></app-tenant-switcher>
+    <span class="context-badge">{{ tenantContext.tenantPlan() }}</span>
+  </div>
+
+  <div class="header-right">
+    <div class="rate-limit" *ngIf="rateLimit.getConfig() as config">
+      <span class="mono">{{ config.requestsUsed }}/{{ config.requestsPerMinute }}</span>
+      <span class="label">req/min</span>
+    </div>
+    <span class="user-info" *ngIf="auth.currentUser() as user">
+      {{ user.name }}
+      <span class="role-badge">{{ user.role }}</span>
+    </span>
+    <button type="button" class="btn-logout" (click)="logout()">Sign Out</button>
+  </div>
+</div>

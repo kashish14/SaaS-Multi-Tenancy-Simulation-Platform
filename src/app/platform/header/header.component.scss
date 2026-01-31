@@ -1,0 +1,63 @@
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: var(--color-bg-primary);
+}
+
+.header-left,
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.context-badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--color-bg-tertiary);
+  border-radius: 4px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.rate-limit {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+
+  .label {
+    font-size: 0.7rem;
+  }
+}
+
+.user-info {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+
+  .role-badge {
+    margin-left: 0.5rem;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+    background: var(--color-bg-tertiary);
+    border-radius: 4px;
+    color: var(--color-accent);
+  }
+}
+
+.btn-logout {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+
+  &:hover {
+    border-color: var(--color-error);
+    color: var(--color-error);
+  }
+}

@@ -1,0 +1,96 @@
+<div class="dashboard">
+  <header class="page-header">
+    <h1>Dashboard</h1>
+    <p class="subtitle">
+      Tenant: <strong>{{ tenantContext.tenantName() }}</strong> · Plan: {{ tenantContext.tenantPlan() }} · ID: <code>{{ tenantContext.tenantId() }}</code>
+    </p>
+  </header>
+
+  <div class="demo-callout">
+    <strong>See tenant isolation in action:</strong> Switch tenants in the header dropdown. Projects, activity, and metrics change — each tenant sees only their own data.
+  </div>
+
+  @if (loading) {
+    <div class="loading">Loading tenant data...</div>
+  } @else if (summary) {
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <span class="metric-label">Active Users</span>
+        <span class="metric-value">{{ summary.activeUsers }}</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">API Calls (24h)</span>
+        <span class="metric-value">{{ summary.apiCalls | number }}</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Storage Used</span>
+        <span class="metric-value">{{ summary.storageUsed | number:'1.1-1' }} GB</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Projects</span>
+        <span class="metric-value">{{ projects.length }}</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Trend</span>
+        <span class="metric-value trend" [class]="summary.trend">{{ summary.trend }}</span>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="chart-section">
+        <h2>Usage Over Time (14 days)</h2>
+        <div class="chart-placeholder">
+          @for (point of summary.chartData; track point.label) {
+            <div
+              class="bar"
+              [style.height.%]="barHeight(point.value)"
+              [attr.title]="point.label + ': ' + point.value"
+            ></div>
+          }
+        </div>
+        <div class="chart-labels">
+          @for (point of summary.chartData; track point.label) {
+            <span>{{ point.label }}</span>
+          }
+        </div>
+      </div>
+
+      <div class="activity-section">
+        <h2>Recent Activity</h2>
+        <ul class="activity-list">
+          @for (a of activity; track a.id) {
+            <li>
+              <span class="actor">{{ a.userName }}</span>
+              <span class="action">{{ a.action }}</span>
+              <span class="target">{{ a.target }}</span>
+              <span class="time">{{ timeAgo(a.timestamp) }}</span>
+            </li>
+          }
+          @empty {
+            <li class="empty">No recent activity</li>
+          }
+        </ul>
+      </div>
+    </div>
+
+    <div class="projects-section">
+      <h2>Projects</h2>
+      <div class="projects-grid">
+        @for (p of projects; track p.id) {
+          <div class="project-card" [class]="p.status">
+            <span class="name">{{ p.name }}</span>
+            <span class="status-badge">{{ p.status }}</span>
+            <span class="updated">Updated {{ timeAgo(p.lastActivity) }}</span>
+          </div>
+        }
+        @empty {
+          <p class="empty">No projects for this tenant</p>
+        }
+      </div>
+    </div>
+
+    <div class="isolation-notice">
+      <strong>Tenant Isolation:</strong> All data above is scoped to <code>tenant:{{ tenantContext.tenantId() }}</code>. Switch tenants in the header to see completely different projects, activity, and metrics.
+    </div>
+  }
+</div>

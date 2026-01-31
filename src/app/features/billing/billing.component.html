@@ -1,0 +1,71 @@
+<div class="billing">
+  <header class="page-header">
+    <h1>Billing & Subscription</h1>
+    <p class="subtitle">Tenant: {{ tenantContext.tenantName() }} · Plan varies by tenant</p>
+  </header>
+
+  <div class="demo-callout">
+    <strong>Plan-based limits:</strong> Free (3 users, 1 GB), Pro (25 users, 50 GB), Enterprise (unlimited). Usage and overages are simulated per tenant.
+  </div>
+
+  @if (loading) {
+    <div class="loading">Loading billing...</div>
+  } @else if (summary) {
+    <div class="current-plan">
+      <h2>Current Plan: {{ billing.getPlanConfig(summary.plan).name }}</h2>
+      <p class="amount">${{ summary.monthlyAmount }}/month</p>
+      <div class="usage">
+        <span>Users: {{ summary.usage.users }}</span>
+        <span>Storage: {{ summary.usage.storageGB }} GB</span>
+        <span>API Calls: {{ summary.usage.apiCalls | number }}</span>
+      </div>
+      @if (Object.keys(summary.overages).length > 0) {
+        <div class="overages">
+          <strong>Overages:</strong>
+          @for (item of summary.overages | keyvalue; track item.key) {
+            <span>{{ item.key }}: ${{ item.value }}</span>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="plans-grid">
+      @for (plan of plans; track plan.id) {
+        <div class="plan-card" [class.current]="summary.plan === plan.id">
+          <h3>{{ plan.name }}</h3>
+          <p class="price">${{ plan.price }}/mo</p>
+          <ul class="features">
+            @for (f of plan.features; track f) {
+              <li>{{ f }}</li>
+            }
+          </ul>
+          <p class="limits">
+            Users: {{ plan.maxUsers < 0 ? 'Unlimited' : plan.maxUsers }} · 
+            Storage: {{ plan.maxStorageGB < 0 ? 'Unlimited' : plan.maxStorageGB + ' GB' }}
+          </p>
+          @if (summary.plan !== plan.id) {
+            <button
+              type="button"
+              class="btn-upgrade"
+              [disabled]="upgrading"
+              (click)="upgrade(plan.id)"
+            >
+              Upgrade
+            </button>
+          } @else {
+            <span class="current-badge">Current</span>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="billing-logic">
+      <h3>Billing Logic (Simulation)</h3>
+      <ul>
+        <li>Free: 3 users, 1 GB — overages charged at $5/user, $2/GB</li>
+        <li>Pro: 25 users, 50 GB — same overage rates</li>
+        <li>Enterprise: Unlimited — no overages</li>
+      </ul>
+    </div>
+  }
+</div>

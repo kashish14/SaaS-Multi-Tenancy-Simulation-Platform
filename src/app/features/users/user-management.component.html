@@ -1,0 +1,50 @@
+<div class="user-management">
+  <header class="page-header">
+    <h1>User Management</h1>
+    <p class="subtitle">Tenant: {{ tenantContext.tenantName() }} · {{ users.length }} user(s) in this tenant</p>
+  </header>
+
+  <div class="demo-callout">
+    <strong>Tenant isolation:</strong> Only users belonging to {{ tenantContext.tenantName() }} are shown. Other tenants' users are never visible.
+  </div>
+
+  @if (!canEdit && !canDelete) {
+    <p class="rbac-notice">You have view-only access. Admin or Manager role required to edit.</p>
+  }
+
+  @if (loading) {
+    <div class="loading">Loading users...</div>
+  } @else {
+    <table class="users-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          @if (canEdit || canDelete) {
+            <th>Actions</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of users; track user.id) {
+          <tr>
+            <td>{{ user.name }}</td>
+            <td>{{ user.email }}</td>
+            <td><span class="role-badge">{{ user.role }}</span></td>
+            @if (canEdit || canDelete) {
+              <td>
+                @if (canEdit) {
+                  <button type="button" class="btn-sm">Edit</button>
+                }
+                @if (canDelete && user.role !== 'admin') {
+                  <button type="button" class="btn-sm danger">Delete</button>
+                }
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

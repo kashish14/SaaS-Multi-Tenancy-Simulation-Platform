@@ -1,0 +1,45 @@
+<div class="login-container">
+  <div class="login-card">
+    <header class="login-header">
+      <h1 class="logo">TenantSphere</h1>
+      <p class="tagline">SaaS Multi-Tenancy Simulation Platform</p>
+    </header>
+
+    <div class="demo-hint">
+      <strong>Try different combinations:</strong>
+      <ul>
+        <li><strong>Acme Corp</strong> — Enterprise plan, 5 users (admin/manager/user)</li>
+        <li><strong>Initech</strong> — Free plan, 3 users (TPS reports, Milton)</li>
+        <li><strong>Wonka Industries</strong> — Enterprise, chocolate factory projects</li>
+        <li><strong>Wayne Enterprises</strong> — Free trial, Batmobile project</li>
+      </ul>
+      Each tenant has isolated projects, activity, and metrics. Switch tenants after login to see the difference.
+    </div>
+
+    <form class="login-form" (ngSubmit)="login()">
+      <div class="field">
+        <label for="tenant">Tenant ({{ tenants.length }} total)</label>
+        <select id="tenant" [(ngModel)]="selectedTenantId" (ngModelChange)="onTenantChange($event)" name="tenant" required>
+          @for (t of tenants; track t.id) {
+            <option [value]="t.id">{{ t.name }} — {{ t.plan }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="user">User (Role)</label>
+        <select id="user" [(ngModel)]="selectedUserId" name="user" required>
+          @for (u of users; track u.id) {
+            <option [value]="u.id">{{ u.name }} — {{ u.role }}</option>
+          }
+        </select>
+      </div>
+
+      <button type="submit" class="btn-primary">Sign In</button>
+    </form>
+
+    <p class="hint">
+      Simulated multi-tenant login. Data is fully isolated per tenant. Role determines which pages you can access (e.g. Admin sees Settings, User does not).
+    </p>
+  </div>
+</div>

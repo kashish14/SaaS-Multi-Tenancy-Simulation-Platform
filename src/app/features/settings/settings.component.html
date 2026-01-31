@@ -1,0 +1,20 @@
+<div class="settings">
+  <header class="page-header">
+    <h1>Platform Settings</h1>
+    <p class="subtitle">Admin only · Tenant: {{ tenantContext.tenantName() }}</p>
+  </header>
+
+  <div class="settings-section">
+    <h2>Tenant Context</h2>
+    <p>Current tenant ID: <code>{{ tenantContext.tenantId() }}</code></p>
+    <p>Storage keys are prefixed with <code>tenant:{{ tenantContext.tenantId() }}:*</code> to ensure isolation.</p>
+  </div>
+
+  <div class="settings-section">
+    <h2>Danger Zone</h2>
+    <button type="button" class="btn-danger" (click)="clearTenantData()">
+      Clear Tenant-Scoped Data
+    </button>
+    <p class="hint">Removes all localStorage entries for the current tenant.</p>
+  </div>
+</div>
