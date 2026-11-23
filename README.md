@@ -1,202 +1,101 @@
-# TenantSphere — SaaS Multi-Tenancy Simulation Platform
+# TenantSphere
 
-> A locally runnable web application demonstrating **platform-level multi-tenancy** — tenant isolation, RBAC, subscription billing, and scaling logic as found in enterprise SaaS systems.
+A front-end simulation of a multi-tenant SaaS platform: tenant isolation, role-based access control, subscription billing and plan-based rate limiting, all running locally with mock data.
 
----
+![Angular](https://img.shields.io/badge/Angular-20-DD0031?logo=angular&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
+![RxJS](https://img.shields.io/badge/RxJS-7-B7178C?logo=reactivex&logoColor=white)
+![SCSS](https://img.shields.io/badge/SCSS-CC6699?logo=sass&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 
-## What Is TenantSphere?
+![Dashboard](docs/screenshots/dashboard.png)
 
-TenantSphere is **not** a simple SaaS CRUD app. It is a **platform simulation** that shows how multi-tenant systems are architecturally designed: how a shared system serves multiple tenants, isolates data and behavior per tenant, enforces role-based permissions, scales features by subscription tier, and simulates billing and usage metering.
+| Billing (plan change) | Mobile |
+| --- | --- |
+| ![Billing](docs/screenshots/billing.png) | <img src="docs/screenshots/mobile.png" width="260" alt="Mobile dashboard"> |
 
-**Target audience:** Engineers, architects, and product owners who want to understand or communicate multi-tenant platform patterns.
+## Features
 
----
+- **Tenant isolation.** Seven seeded tenants, each with its own users, projects, activity and metrics. The header tenant switcher swaps the active tenant and every page reloads its tenant-scoped data. Edits are persisted under `tenant:{id}:*` keys in `localStorage`, so changes in one tenant never show up in another.
+- **RBAC.** Admin, Manager and User roles map to a permission matrix. Route guards block pages, the sidebar hides links, and actions are gated per permission (for example, Managers can change user roles but not remove users). A "view as" role selector in the header lets you switch roles live; if the new role can't see the current page you are sent back to the dashboard.
+- **Subscription billing.** Free, Pro and Enterprise plans with user and storage limits, overage charges ($5/user, $2/GB) and a monthly invoice per tenant. Admins can upgrade or downgrade, and the change takes effect immediately across the app.
+- **Plan-driven behavior.** The plan sets the API rate limit shown in the header (60 / 300 / 2000 req/min, counted per tenant) and gates analytics CSV export to Pro and Enterprise.
+- **Settings.** Admins can inspect the tenant's storage namespace and clear it without affecting other tenants.
 
-## How to Run Locally
+## Try it
+
+1. Sign in as **Acme Corp / Alice Admin** (Enterprise).
+2. Switch to **Initech** in the header: projects, activity and metrics change, and the plan badge shows Free.
+3. Open **Analytics**: export is locked on Free. Go to **Billing**, upgrade to Pro, and come back: export now works and the rate limit is 300 req/min.
+4. In **Users**, edit a role or remove someone, then check **Settings** to see the tenant-scoped key that was written.
+5. Switch the header role to **User**: Users and Settings disappear from the nav and billing becomes read-only.
+
+## Tech stack
+
+Angular 20 (standalone components, signals), TypeScript, RxJS, SCSS, Karma + Jasmine. No backend: services return mock data through RxJS observables with simulated latency, and state is persisted to `localStorage`.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  UI[Feature pages<br/>dashboard, users, analytics, billing, settings] --> Svc[Domain services<br/>User, Project, Analytics, Billing]
+  Header[Header: tenant switcher, role selector] --> Ctx[TenantContextService]
+  Header --> Auth[AuthService]
+  Svc --> Ctx
+  Svc --> Store[TenantStorageService<br/>tenant:id:* keys]
+  Svc --> RL[RateLimitService]
+  Guards[AuthGuard / RoleGuard] --> ACL[AccessControlService] --> Auth
+  Ctx -- currentTenant signal --> UI
+```
+
+- `TenantContextService` holds the active tenant as a signal. Feature pages subscribe to it with `toObservable(...)` + `switchMap`, so a tenant switch or plan change cancels in-flight requests and reloads that page's data.
+- `TenantStorageService` prefixes every key with the tenant ID; `UserService` reads seed data until a tenant has saved its own copy.
+- `AccessControlService` checks the current role against `ROLE_PERMISSIONS` in `core/models/permission.model.ts`.
+- `BillingService` derives usage per tenant, computes the invoice and changes the tenant's plan.
+
+This mirrors the "shared database with a `tenant_id` column" model at the application layer. A real system would enforce the same boundary server-side (row-level security or schema-per-tenant).
+
+## Getting started
+
+Requires Node.js 20.19+ (tested on Node 22 and 24).
 
 ```bash
-npm install
+git clone https://github.com/kashish14/SaaS-Multi-Tenancy-Simulation-Platform.git
+cd SaaS-Multi-Tenancy-Simulation-Platform
+npm ci
 npm start
 ```
 
-Then open [http://localhost:4200](http://localhost:4200).
+Open http://localhost:4200 and pick a tenant and user on the login screen.
 
-**Login:** Use the simulated login screen to pick a tenant and user (with a specific role). Each combination demonstrates different isolation and permission behavior.
+## Scripts
 
----
+| Command | Description |
+| --- | --- |
+| `npm start` | Dev server on port 4200 |
+| `npm run build` | Production build to `dist/tenant-sphere` |
+| `npm test` | Unit tests in watch mode (Chrome) |
+| `npm run test:ci` | Single headless test run, as used in CI |
 
-## Multi-Tenancy Implementation
-
-### Tenant Isolation Strategy
-
-- **Tenant Context Service** (`TenantContextService`) is the single source of truth for the active tenant.
-- All tenant-aware data access flows through this service. Data keys are prefixed with `tenant:{tenantId}:` so storage never crosses tenant boundaries.
-- **Tenant-Storage Service** (`TenantStorageService`) wraps `localStorage` with tenant-scoped keys. Switching tenants immediately changes which data is read/written.
-- Mock services (analytics, billing, user) filter data by `tenantId`. In production, this would map to row-level security or sharded databases.
-
-### Data Isolation in Code
-
-```typescript
-// TenantStorageService — every key is tenant-scoped
-getTenantStorageKey(prefix: string): string {
-  const id = this.getTenantId();
-  return id ? `tenant:${id}:${prefix}` : prefix;
-}
-```
-
-### Tenant Switching
-
-The header includes a **Tenant Switcher**. Changing tenants:
-
-1. Updates the active tenant in `TenantContextService`
-2. Refreshes all tenant-scoped data
-3. Emits `tenant_switched` on the event bus for cross-module coordination
-4. Keeps the same logged-in user (simulating a user with access to multiple tenants)
-
----
-
-## Role-Based Access Control (RBAC)
-
-### Roles and Permissions
-
-| Role    | Permissions |
-|--------|-------------|
-| **Admin**  | Full access: users (CRUD), analytics export, billing manage, platform settings |
-| **Manager**| Users (view/create/edit), analytics export, billing view |
-| **User**   | Dashboard, analytics view, billing view |
-
-### Enforcement
-
-- **Route guards** (`AuthGuard`, `RoleGuard`): Protect routes by authentication and required roles.
-- **AccessControlService**: Central permission checks via `hasPermission(permission)` and `canAccessRoute(roles)`.
-- **UI**: Sidebar and feature components hide or disable actions based on `AccessControlService`.
-
-### Permission Matrix
-
-Defined in `permission.model.ts`:
-
-```typescript
-export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
-  admin: ['dashboard.view', 'users.view', 'users.create', 'users.edit', 'users.delete', ...],
-  manager: ['dashboard.view', 'users.view', 'users.create', 'users.edit', ...],
-  user: ['dashboard.view', 'analytics.view', 'billing.view'],
-};
-```
-
----
-
-## Billing & Subscription Simulation
-
-### Plans
-
-| Plan       | Price  | Users | Storage | Features |
-|-----------|--------|-------|---------|----------|
-| Free      | $0     | 3     | 1 GB    | Basic dashboard |
-| Pro       | $49/mo | 25    | 50 GB   | Advanced analytics, export |
-| Enterprise| $299/mo| ∞     | ∞       | SLA, dedicated support |
-
-### Billing Logic
-
-- **Usage metrics** (users, storage, API calls) are simulated per tenant.
-- **Overages**: Free and Pro charge $5/user and $2/GB over plan limits.
-- **Feature gating**: `BillingService.isFeatureAvailable('advancedAnalytics')` returns `false` for Free; Pro and Enterprise get export and advanced analytics.
-- **Upgrade flow**: Simulated; in production this would integrate with Stripe, Chargebee, etc.
-
----
-
-## Scalability Considerations
-
-### Rate Limiting (Simulated)
-
-- **RateLimitService** applies different limits per plan:
-  - Free: 60 req/min
-  - Pro: 300 req/min
-  - Enterprise: 2000 req/min
-- Limits are keyed by tenant ID. The header displays current usage.
-
-### Feature Throttling
-
-- Analytics export is gated by plan.
-- Usage and billing dashboards reflect plan-specific limits.
-
-### Platform Trade-Offs
-
-| Approach | Pros | Cons |
-|----------|------|------|
-| Shared DB, tenant_id column | Simple, low cost | Requires strict RLS and auditing |
-| Schema-per-tenant | Strong isolation | Harder migrations, more ops |
-| DB-per-tenant | Maximum isolation | Higher cost, complex backups |
-| TenantSphere (simulated) | Demonstrates patterns | In-memory/mock; not production DB |
-
-TenantSphere uses a **shared in-memory / localStorage** model with tenant-scoped keys and filtering. This mirrors the "shared DB with tenant_id" pattern at the application layer.
-
----
-
-## Architecture Overview
+## Project structure
 
 ```
 src/app/
-├── core/                 # Platform-level concerns
-│   ├── guards/           # Auth + Role guards
-│   ├── models/           # Tenant, User, Permission
-│   ├── services/         # TenantContext, Auth, AccessControl, Billing, etc.
-│   └── error-handler/    # Global error handling
-├── platform/             # Shell & navigation
-│   ├── shell/
-│   ├── header/
-│   ├── sidebar/
-│   └── tenant-switcher/
-├── features/             # Domain modules
-│   ├── auth/login/
-│   ├── dashboard/
-│   ├── users/
-│   ├── analytics/
-│   ├── billing/
-│   └── settings/
-├── shared/               # Reusable directives, pipes
-└── data/                 # Mock data
+├── core/          guards, models, services (tenant context, auth, RBAC, billing, rate limit)
+├── platform/      shell, header, sidebar, tenant switcher
+├── features/      login, dashboard, users, analytics, billing, settings
+├── shared/        click-outside directive
+└── data/          seeded tenants, users, projects, activity
 ```
-
----
-
-## Tech Stack
-
-- **Angular 18** (standalone components)
-- **TypeScript 5.4**
-- **RxJS**
-- **SCSS**
-- **Mock backend** (in-memory, localStorage)
-- **No external chart lib** (custom CSS charts for demo)
-
----
 
 ## Testing
 
 ```bash
-npm test
+npm run test:ci
 ```
 
-Tests cover:
-
-- **Tenant isolation**: Storage keys, tenant switching, no cross-tenant leakage
-- **RBAC**: Permission checks per role, route access
-- **Billing**: Plan configs, feature gating, summary generation
-
----
-
-## Production Readiness Notes
-
-This is a **simulation platform**, not a production deployment. For real systems, consider:
-
-- Real authentication (OAuth2, OIDC)
-- Secure backend APIs with tenant-scoped queries
-- Database RLS or application-level tenant filtering
-- Proper billing integration (Stripe, etc.)
-- Monitoring, APM, and structured logging
-- Rate limiting at API gateway or reverse proxy
-
----
+19 unit tests cover tenant-scoped storage keys and cross-tenant isolation, tenant switching, the role permission matrix and role switching, plan configs, feature gating, billing summaries and plan changes. GitHub Actions runs install, build and tests on Node 22 for every push and pull request.
 
 ## License
 
-MIT
+[MIT](LICENSE) © 2026 Kashish Agarwal
