@@ -21,10 +21,10 @@ interface NavItem {
 export class SidebarComponent {
   navItems: NavItem[] = [
     { path: '/dashboard', label: 'Dashboard', icon: '◉', roles: ['admin', 'manager', 'user'] },
-    { path: '/users', label: 'User Management', icon: '◇', roles: ['admin', 'manager'] },
-    { path: '/analytics', label: 'Usage Analytics', icon: '▷', roles: ['admin', 'manager', 'user'] },
-    { path: '/billing', label: 'Billing & Subscription', icon: '◈', roles: ['admin', 'manager', 'user'] },
-    { path: '/settings', label: 'Platform Settings', icon: '⚙', roles: ['admin'] },
+    { path: '/users', label: 'Users', icon: '◇', roles: ['admin', 'manager'] },
+    { path: '/analytics', label: 'Analytics', icon: '▷', roles: ['admin', 'manager', 'user'] },
+    { path: '/billing', label: 'Billing', icon: '◈', roles: ['admin', 'manager', 'user'] },
+    { path: '/settings', label: 'Settings', icon: '⚙', roles: ['admin'] },
   ];
 
   constructor(private readonly access: AccessControlService) {}

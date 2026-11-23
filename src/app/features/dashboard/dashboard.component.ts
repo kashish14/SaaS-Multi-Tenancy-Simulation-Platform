@@ -1,4 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
+import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { forkJoin, switchMap, tap } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { TenantContextService } from '../../core/services/tenant-context.service';
 import { AnalyticsService, type AnalyticsSummary } from '../../core/services/analytics.service';
@@ -15,7 +17,7 @@ import type { MockActivity } from '../../data/mock-data';
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent {
   summary: AnalyticsSummary | null = null;
   projects: MockProject[] = [];
   activity: MockActivity[] = [];
@@ -27,22 +29,30 @@ export class DashboardComponent implements OnInit {
     private readonly projectService: ProjectService,
     private readonly activityService: ActivityService,
     public readonly billing: BillingService
-  ) {}
+  ) {
+    // Reload every time the active tenant changes (switcher or plan change).
+    toObservable(this.tenantContext.currentTenant)
+      .pipe(
+        tap(() => (this.loading = true)),
+        switchMap(() =>
+          forkJoin({
+            summary: this.analytics.getSummary(),
+            projects: this.projectService.getProjectsByTenant(),
+            activity: this.activityService.getRecentActivity(6),
+          })
+        ),
+        takeUntilDestroyed()
+      )
+      .subscribe(({ summary, projects, activity }) => {
+        this.summary = summary;
+        this.projects = projects;
+        this.activity = activity;
+        this.maxChartValue = Math.max(...summary.chartData.map((d) => d.value), 1);
+        this.loading = false;
+      });
+  }
 
   maxChartValue = 100;
-
-  ngOnInit(): void {
-    this.analytics.getSummary().subscribe({
-      next: (s) => {
-        this.summary = s;
-        this.maxChartValue = Math.max(...s.chartData.map((d) => d.value), 1);
-        this.loading = false;
-      },
-      error: () => (this.loading = false),
-    });
-    this.projectService.getProjectsByTenant().subscribe((p) => (this.projects = p));
-    this.activityService.getRecentActivity(6).subscribe((a) => (this.activity = a));
-  }
 
   barHeight(value: number): number {
     return Math.round((value / this.maxChartValue) * 100);

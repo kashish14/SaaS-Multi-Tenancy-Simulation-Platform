@@ -1,55 +1,56 @@
 <div class="analytics">
   <header class="page-header">
-    <h1>Usage Analytics</h1>
-    <p class="subtitle">Tenant: {{ tenantContext.tenantName() }} · Plan: {{ tenantContext.tenantPlan() }}</p>
+    <h1>Usage analytics</h1>
+    <p class="subtitle">
+      {{ tenantContext.tenantName() }} ·
+      <span class="badge plan-{{ tenantContext.tenantPlan() }}">{{ tenantContext.tenantPlan() }}</span>
+    </p>
   </header>
 
-  <div class="demo-callout">
-    <strong>Tenant-scoped:</strong> API usage data below is isolated per tenant. Switch tenants to see different endpoint distributions.
+  <div class="callout">
+    <strong>Tenant-scoped:</strong> API usage below is isolated per tenant. Switch tenants to see a different endpoint mix.
   </div>
 
   @if (loading) {
-    <div class="loading">Loading analytics...</div>
+    <div class="loading" role="status">Loading analytics…</div>
   } @else if (summary) {
-    <div class="charts-grid">
-      <div class="chart-section">
-        <h2>Usage Over Time (14 days)</h2>
-        <div class="chart-placeholder">
-          @for (point of summary.chartData; track point.label) {
-            <div
-              class="bar"
-              [style.height.%]="barHeight(point.value)"
-              [attr.title]="point.label + ': ' + point.value"
-            ></div>
-          }
-        </div>
-        <div class="chart-labels">
-          @for (point of summary.chartData; track point.label) {
-            <span>{{ point.label }}</span>
-          }
-        </div>
+    <section class="card">
+      <h2>Usage over time (14 days)</h2>
+      <div class="bar-chart" role="img" [attr.aria-label]="'Daily usage for ' + tenantContext.tenantName()">
+        @for (point of summary.chartData; track point.label) {
+          <div class="bar" [style.height.%]="barHeight(point.value)" [attr.title]="point.label + ': ' + point.value"></div>
+        }
       </div>
+      <div class="bar-labels">
+        @for (point of summary.chartData; track point.label; let i = $index) {
+          <span [class.hide-sm]="i % 2 === 1">{{ point.label }}</span>
+        }
+      </div>
+    </section>
 
-      @if (summary.apiByEndpoint.length) {
-        <div class="endpoints-section">
-          <h2>API Calls by Endpoint</h2>
-          <ul class="endpoints-list">
-            @for (e of summary.apiByEndpoint; track e.endpoint) {
-              <li>
-                <span class="endpoint">{{ e.endpoint }}</span>
-                <span class="bar-wrap"><span class="fill" [style.width.%]="e.pct"></span></span>
-                <span class="calls">{{ e.calls | number }} ({{ e.pct }}%)</span>
-              </li>
-            }
-          </ul>
-        </div>
+    <section class="card">
+      <h2>API calls by endpoint</h2>
+      <ul class="endpoints">
+        @for (e of summary.apiByEndpoint; track e.endpoint) {
+          <li>
+            <span class="endpoint mono">{{ e.endpoint }}</span>
+            <span class="track"><span class="fill" [style.width.%]="e.pct"></span></span>
+            <span class="calls">{{ e.calls | number }} · {{ e.pct }}%</span>
+          </li>
+        } @empty {
+          <li class="empty">No API calls recorded</li>
+        }
+      </ul>
+    </section>
+
+    <div class="export">
+      @if (!planAllowsExport) {
+        <p class="callout warn"><strong>Pro feature:</strong> upgrade this tenant to Pro or Enterprise on the Billing page to export reports.</p>
+      } @else if (!roleAllowsExport) {
+        <p class="callout warn"><strong>Permission required:</strong> your role can view analytics but not export them (needs Admin or Manager).</p>
+      } @else {
+        <button type="button" class="btn btn-primary" (click)="exportCsv()">Export CSV report</button>
       }
     </div>
-
-    @if (canExport) {
-      <button type="button" class="btn-export">Export Report</button>
-    } @else {
-      <p class="upgrade-hint">Upgrade to Pro or Enterprise to export analytics reports.</p>
-    }
   }
 </div>

@@ -1,71 +1,87 @@
 <div class="billing">
   <header class="page-header">
-    <h1>Billing & Subscription</h1>
-    <p class="subtitle">Tenant: {{ tenantContext.tenantName() }} · Plan varies by tenant</p>
+    <h1>Billing &amp; subscription</h1>
+    <p class="subtitle">{{ tenantContext.tenantName() }} · billed per tenant</p>
   </header>
 
-  <div class="demo-callout">
-    <strong>Plan-based limits:</strong> Free (3 users, 1 GB), Pro (25 users, 50 GB), Enterprise (unlimited). Usage and overages are simulated per tenant.
-  </div>
+  @if (message) {
+    <div class="callout success" role="status">{{ message }} Rate limits, feature gates and the invoice below were updated.</div>
+  }
 
   @if (loading) {
-    <div class="loading">Loading billing...</div>
+    <div class="loading" role="status">Loading billing…</div>
   } @else if (summary) {
-    <div class="current-plan">
-      <h2>Current Plan: {{ billing.getPlanConfig(summary.plan).name }}</h2>
-      <p class="amount">${{ summary.monthlyAmount }}/month</p>
-      <div class="usage">
-        <span>Users: {{ summary.usage.users }}</span>
-        <span>Storage: {{ summary.usage.storageGB }} GB</span>
-        <span>API Calls: {{ summary.usage.apiCalls | number }}</span>
+    <section class="card current-plan">
+      <div class="plan-head">
+        <div>
+          <span class="eyebrow">Current plan</span>
+          <h2>{{ billing.getPlanConfig(summary.plan).name }}</h2>
+        </div>
+        <div class="amount">
+          ${{ summary.monthlyAmount | number }}<span>/month</span>
+        </div>
       </div>
-      @if (Object.keys(summary.overages).length > 0) {
+      <dl class="usage">
+        <div><dt>Users</dt><dd>{{ summary.usage.users }} / {{ billing.getPlanConfig(summary.plan).maxUsers < 0 ? '∞' : billing.getPlanConfig(summary.plan).maxUsers }}</dd></div>
+        <div><dt>Storage</dt><dd>{{ summary.usage.storageGB }} / {{ billing.getPlanConfig(summary.plan).maxStorageGB < 0 ? '∞' : billing.getPlanConfig(summary.plan).maxStorageGB }} GB</dd></div>
+        <div><dt>API calls</dt><dd>{{ summary.usage.apiCalls | number }}</dd></div>
+        <div><dt>Period</dt><dd>{{ summary.usage.month }}</dd></div>
+      </dl>
+      @if (hasOverages(summary)) {
         <div class="overages">
-          <strong>Overages:</strong>
+          <strong>Overages this month:</strong>
           @for (item of summary.overages | keyvalue; track item.key) {
-            <span>{{ item.key }}: ${{ item.value }}</span>
+            <span>{{ item.key }} ${{ item.value }}</span>
           }
         </div>
+      } @else {
+        <p class="no-overages">No overages — usage is within plan limits.</p>
       }
-    </div>
+    </section>
+
+    @if (!canManage) {
+      <div class="callout warn"><strong>View only:</strong> only Admins can change the subscription. Switch role in the header to try it.</div>
+    }
 
     <div class="plans-grid">
       @for (plan of plans; track plan.id) {
-        <div class="plan-card" [class.current]="summary.plan === plan.id">
+        <div class="card plan-card" [class.current]="summary.plan === plan.id">
           <h3>{{ plan.name }}</h3>
-          <p class="price">${{ plan.price }}/mo</p>
+          <p class="price">${{ plan.price }}<span>/mo</span></p>
           <ul class="features">
             @for (f of plan.features; track f) {
               <li>{{ f }}</li>
             }
           </ul>
           <p class="limits">
-            Users: {{ plan.maxUsers < 0 ? 'Unlimited' : plan.maxUsers }} · 
-            Storage: {{ plan.maxStorageGB < 0 ? 'Unlimited' : plan.maxStorageGB + ' GB' }}
+            {{ plan.maxUsers < 0 ? 'Unlimited' : plan.maxUsers }} users ·
+            {{ plan.maxStorageGB < 0 ? 'Unlimited' : plan.maxStorageGB + ' GB' }} storage
           </p>
-          @if (summary.plan !== plan.id) {
+          @if (summary.plan === plan.id) {
+            <span class="badge active current-badge">Current plan</span>
+          } @else if (canManage) {
             <button
               type="button"
-              class="btn-upgrade"
-              [disabled]="upgrading"
-              (click)="upgrade(plan.id)"
+              class="btn"
+              [class.btn-primary]="isUpgrade(plan.id)"
+              [class.btn-ghost]="!isUpgrade(plan.id)"
+              [disabled]="changing !== null"
+              (click)="changePlan(plan.id)"
             >
-              Upgrade
+              {{ changing === plan.id ? 'Updating…' : (isUpgrade(plan.id) ? 'Upgrade' : 'Downgrade') }}
             </button>
-          } @else {
-            <span class="current-badge">Current</span>
           }
         </div>
       }
     </div>
 
-    <div class="billing-logic">
-      <h3>Billing Logic (Simulation)</h3>
-      <ul>
-        <li>Free: 3 users, 1 GB — overages charged at $5/user, $2/GB</li>
-        <li>Pro: 25 users, 50 GB — same overage rates</li>
-        <li>Enterprise: Unlimited — no overages</li>
+    <section class="card">
+      <h2>How billing is simulated</h2>
+      <ul class="rules">
+        <li>Base price by plan; overages at $5 per extra user and $2 per extra GB.</li>
+        <li>Plan also sets the API rate limit (Free 60, Pro 300, Enterprise 2000 req/min) shown in the header.</li>
+        <li>Analytics export is gated to Pro and Enterprise.</li>
       </ul>
-    </div>
+    </section>
   }
 </div>

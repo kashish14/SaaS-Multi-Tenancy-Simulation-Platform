@@ -1,163 +1,120 @@
-.billing {
-  max-width: 900px;
-}
-
-.page-header {
-  margin-bottom: 1.5rem;
-
-  h1 {
-    font-size: 1.75rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .subtitle {
-    color: var(--color-text-secondary);
-    font-size: 0.95rem;
-  }
-}
-
-.demo-callout {
-  padding: 0.75rem 1rem;
-  margin-bottom: 1.5rem;
-  background: rgba(0, 212, 170, 0.08);
-  border: 1px solid rgba(0, 212, 170, 0.2);
-  border-radius: var(--radius-sm);
-  font-size: 0.9rem;
-  color: var(--color-text-secondary);
-
-  strong {
-    color: var(--color-accent);
-  }
-}
-
-.loading {
-  color: var(--color-text-muted);
-  padding: 2rem;
-}
-
 .current-plan {
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 1.5rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.25rem;
 
-  h2 {
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
+  .plan-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1rem;
+    margin-bottom: 1rem;
+
+    h2 {
+      font-size: 1.35rem;
+      color: var(--color-text-primary);
+      margin: 0;
+    }
+  }
+
+  .eyebrow {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
   }
 
   .amount {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 600;
     color: var(--color-accent);
-    margin-bottom: 1rem;
-  }
 
-  .usage {
-    display: flex;
-    gap: 1.5rem;
-    font-size: 0.9rem;
+    span {
+      font-size: 0.9rem;
+      color: var(--color-text-secondary);
+    }
+  }
+}
+
+.usage {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin: 0;
+
+  dt {
+    font-size: 0.75rem;
     color: var(--color-text-secondary);
   }
 
-  .overages {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--color-border);
-    font-size: 0.9rem;
-    color: var(--color-warning);
+  dd {
+    margin: 0;
+    font-weight: 500;
   }
+}
+
+.overages,
+.no-overages {
+  margin: 1rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.875rem;
+}
+
+.overages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  color: var(--color-warning);
+}
+
+.no-overages {
+  color: var(--color-text-secondary);
 }
 
 .plans-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.25rem;
 }
 
 .plan-card {
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
 
   &.current {
     border-color: var(--color-accent);
-    box-shadow: 0 0 0 2px rgba(0, 212, 170, 0.2);
-  }
-
-  h3 {
-    font-size: 1.1rem;
-    margin-bottom: 0.25rem;
   }
 
   .price {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     font-weight: 600;
-    margin-bottom: 1rem;
+
+    span {
+      font-size: 0.85rem;
+      color: var(--color-text-secondary);
+    }
   }
 
   .features {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 1rem;
-    font-size: 0.85rem;
+    flex: 1;
+    margin: 0 0 0.75rem;
+    padding-left: 1.1rem;
+    font-size: 0.875rem;
     color: var(--color-text-secondary);
-
-    li {
-      padding: 0.25rem 0;
-      &:before { content: '✓ '; color: var(--color-accent); }
-    }
   }
 
   .limits {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     color: var(--color-text-muted);
-    margin-bottom: 1rem;
-  }
-
-  .btn-upgrade {
-    padding: 0.5rem 1rem;
-    background: var(--color-accent);
-    color: var(--color-bg-primary);
-    border: none;
-    border-radius: var(--radius-sm);
-    font-weight: 500;
-
-    &:hover:not(:disabled) {
-      background: var(--color-accent-muted);
-    }
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
   }
 
   .current-badge {
-    font-size: 0.8rem;
-    color: var(--color-accent);
-    font-weight: 500;
+    align-self: flex-start;
   }
 }
 
-.billing-logic {
-  padding: 1rem;
-  background: rgba(0, 212, 170, 0.08);
-  border: 1px solid rgba(0, 212, 170, 0.2);
-  border-radius: var(--radius-sm);
-  font-size: 0.9rem;
+.rules {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.875rem;
   color: var(--color-text-secondary);
-
-  h3 {
-    font-size: 0.95rem;
-    margin-bottom: 0.5rem;
-  }
-
-  ul {
-    margin: 0;
-    padding-left: 1.25rem;
-  }
 }

@@ -11,15 +11,20 @@ import { TenantStorageService } from '../../core/services/tenant-storage.service
   styleUrl: './settings.component.scss',
 })
 export class SettingsComponent {
+  message = '';
+
   constructor(
     public readonly tenantContext: TenantContextService,
     private readonly tenantStorage: TenantStorageService
   ) {}
 
+  get storedKeys(): string[] {
+    return this.tenantStorage.keys();
+  }
+
   clearTenantData(): void {
-    if (confirm('Clear all tenant-scoped data? This cannot be undone.')) {
-      this.tenantStorage.clear();
-      alert('Tenant data cleared.');
-    }
+    if (!confirm(`Clear all stored data for ${this.tenantContext.tenantName()}? Seed data will be restored.`)) return;
+    this.tenantStorage.clear();
+    this.message = 'Tenant-scoped data cleared. Other tenants were not affected.';
   }
 }

@@ -1,23 +1,31 @@
-<div class="tenant-switcher" (appClickOutside)="isOpen.set(false)">
-  <button type="button" class="switcher-trigger" (click)="toggle()" [class.open]="isOpen()">
+<div class="tenant-switcher" (appClickOutside)="isOpen.set(false)" (keydown.escape)="isOpen.set(false)">
+  <button
+    type="button"
+    class="switcher-trigger"
+    (click)="toggle()"
+    [class.open]="isOpen()"
+    aria-haspopup="listbox"
+    [attr.aria-expanded]="isOpen()"
+    aria-label="Switch tenant"
+  >
+    <span class="avatar" aria-hidden="true">{{ (currentTenant?.name ?? '?')[0] }}</span>
     <span class="tenant-name">{{ currentTenant?.name ?? 'Select tenant' }}</span>
-    @if (currentTenant) {
-      <span class="tenant-plan">({{ currentTenant.plan }})</span>
-    }
-    <span class="chevron">▼</span>
+    <span class="chevron" aria-hidden="true">▾</span>
   </button>
 
   @if (isOpen()) {
-    <div class="dropdown">
+    <div class="dropdown" role="listbox" aria-label="Tenants">
       @for (t of availableTenants; track t.id) {
         <button
           type="button"
+          role="option"
           class="dropdown-item"
           [class.active]="currentTenant?.id === t.id"
+          [attr.aria-selected]="currentTenant?.id === t.id"
           (click)="switchTo(t)"
         >
           <span>{{ t.name }}</span>
-          <span class="plan-badge">{{ t.plan }}</span>
+          <span class="badge plan-{{ t.plan }}">{{ t.plan }}</span>
         </button>
       }
     </div>

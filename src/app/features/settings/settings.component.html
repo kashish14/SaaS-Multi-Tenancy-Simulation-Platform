@@ -1,20 +1,40 @@
 <div class="settings">
   <header class="page-header">
-    <h1>Platform Settings</h1>
-    <p class="subtitle">Admin only · Tenant: {{ tenantContext.tenantName() }}</p>
+    <h1>Platform settings</h1>
+    <p class="subtitle">Admin only · {{ tenantContext.tenantName() }}</p>
   </header>
 
-  <div class="settings-section">
-    <h2>Tenant Context</h2>
-    <p>Current tenant ID: <code>{{ tenantContext.tenantId() }}</code></p>
-    <p>Storage keys are prefixed with <code>tenant:{{ tenantContext.tenantId() }}:*</code> to ensure isolation.</p>
-  </div>
+  @if (message) {
+    <div class="callout success" role="status">{{ message }}</div>
+  }
 
-  <div class="settings-section">
-    <h2>Danger Zone</h2>
-    <button type="button" class="btn-danger" (click)="clearTenantData()">
-      Clear Tenant-Scoped Data
+  <section class="card">
+    <h2>Tenant context</h2>
+    <dl class="kv">
+      <dt>Tenant ID</dt><dd><code>{{ tenantContext.tenantId() }}</code></dd>
+      <dt>Plan</dt><dd><span class="badge plan-{{ tenantContext.tenantPlan() }}">{{ tenantContext.tenantPlan() }}</span></dd>
+      <dt>Storage namespace</dt><dd><code>tenant:{{ tenantContext.tenantId() }}:*</code></dd>
+    </dl>
+  </section>
+
+  <section class="card">
+    <h2>Stored tenant data</h2>
+    @if (storedKeys.length) {
+      <ul class="keys">
+        @for (k of storedKeys; track k) {
+          <li><code>{{ k }}</code></li>
+        }
+      </ul>
+    } @else {
+      <p class="empty">Nothing stored yet. Edit or remove a user on the Users page to create tenant-scoped data.</p>
+    }
+  </section>
+
+  <section class="card danger-zone">
+    <h2>Danger zone</h2>
+    <p class="hint">Removes every localStorage entry for this tenant only. Other tenants keep their data.</p>
+    <button type="button" class="btn btn-danger" [disabled]="!storedKeys.length" (click)="clearTenantData()">
+      Clear tenant-scoped data
     </button>
-    <p class="hint">Removes all localStorage entries for the current tenant.</p>
-  </div>
+  </section>
 </div>

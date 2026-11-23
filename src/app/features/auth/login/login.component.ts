@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
 import { TenantContextService } from '../../../core/services/tenant-context.service';
 import { EventBusService } from '../../../core/services/event-bus.service';
-import { MOCK_TENANTS, MOCK_USERS } from '../../../data/mock-data';
+import { MOCK_USERS } from '../../../data/mock-data';
 
 @Component({
   selector: 'app-login',
@@ -17,7 +17,7 @@ import { MOCK_TENANTS, MOCK_USERS } from '../../../data/mock-data';
 export class LoginComponent {
   selectedTenantId = '';
   selectedUserId = '';
-  tenants = MOCK_TENANTS;
+  tenants;
   usersByTenant: Record<string, typeof MOCK_USERS> = {};
 
   constructor(
@@ -26,11 +26,12 @@ export class LoginComponent {
     private readonly eventBus: EventBusService,
     private readonly router: Router
   ) {
-    for (const t of MOCK_TENANTS) {
+    this.tenants = this.tenantContext.availableTenants();
+    for (const t of this.tenants) {
       this.usersByTenant[t.id] = MOCK_USERS.filter((u) => u.tenantId === t.id);
     }
-    if (MOCK_TENANTS.length > 0) {
-      if (!this.selectedTenantId) this.selectedTenantId = MOCK_TENANTS[0].id;
+    if (this.tenants.length > 0) {
+      this.selectedTenantId = this.tenants[0].id;
       this.onTenantChange(this.selectedTenantId);
     }
   }
@@ -50,7 +51,6 @@ export class LoginComponent {
     if (!tenant || !user) return;
 
     this.auth.login({ ...user, tenant }, tenant);
-    this.tenantContext.setAvailableTenants(this.tenants);
     this.eventBus.emitLogin(user.id);
     this.router.navigate(['/dashboard']);
   }

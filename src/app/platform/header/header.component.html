@@ -1,18 +1,32 @@
 <div class="header-content">
   <div class="header-left">
     <app-tenant-switcher></app-tenant-switcher>
-    <span class="context-badge">{{ tenantContext.tenantPlan() }}</span>
+    <span class="badge plan-{{ tenantContext.tenantPlan() }}" title="Subscription plan">{{ tenantContext.tenantPlan() }}</span>
   </div>
 
   <div class="header-right">
-    <div class="rate-limit" *ngIf="rateLimit.getConfig() as config">
-      <span class="mono">{{ config.requestsUsed }}/{{ config.requestsPerMinute }}</span>
-      <span class="label">req/min</span>
-    </div>
-    <span class="user-info" *ngIf="auth.currentUser() as user">
-      {{ user.name }}
-      <span class="role-badge">{{ user.role }}</span>
-    </span>
-    <button type="button" class="btn-logout" (click)="logout()">Sign Out</button>
+    @if (rateLimit.getConfig(); as config) {
+      <div class="rate-limit" title="Simulated API requests this minute (limit depends on plan)">
+        <span class="mono">{{ config.requestsUsed }}/{{ config.requestsPerMinute }}</span>
+        <span class="label">req/min</span>
+      </div>
+    }
+    @if (auth.currentUser(); as user) {
+      <span class="user-name">{{ user.name }}</span>
+      <label class="role-switch">
+        <span class="sr-only">View as role</span>
+        <select
+          [value]="user.role"
+          (change)="switchRole($any($event.target).value)"
+          aria-label="View as role"
+          title="Switch role to see RBAC in action"
+        >
+          @for (r of roles; track r) {
+            <option [value]="r" [selected]="r === user.role">{{ r }}</option>
+          }
+        </select>
+      </label>
+    }
+    <button type="button" class="btn btn-ghost" (click)="logout()">Sign out</button>
   </div>
 </div>

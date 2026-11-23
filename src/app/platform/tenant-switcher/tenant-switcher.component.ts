@@ -14,13 +14,14 @@ import type { Tenant } from '../../core/models/tenant.model';
 })
 export class TenantSwitcherComponent {
   isOpen = signal(false);
-  availableTenants: Tenant[] = [];
 
   constructor(
     private readonly tenantContext: TenantContextService,
     private readonly eventBus: EventBusService
-  ) {
-    this.tenantContext.availableTenants$.subscribe((t) => (this.availableTenants = t));
+  ) {}
+
+  get availableTenants(): Tenant[] {
+    return this.tenantContext.availableTenants();
   }
 
   get currentTenant() {

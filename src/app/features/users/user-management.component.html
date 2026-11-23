@@ -1,50 +1,81 @@
 <div class="user-management">
   <header class="page-header">
-    <h1>User Management</h1>
-    <p class="subtitle">Tenant: {{ tenantContext.tenantName() }} · {{ users.length }} user(s) in this tenant</p>
+    <h1>Users</h1>
+    <p class="subtitle">{{ tenantContext.tenantName() }} · {{ users.length }} member{{ users.length === 1 ? '' : 's' }}</p>
   </header>
 
-  <div class="demo-callout">
-    <strong>Tenant isolation:</strong> Only users belonging to {{ tenantContext.tenantName() }} are shown. Other tenants' users are never visible.
+  <div class="callout">
+    <strong>Tenant isolation:</strong> only members of {{ tenantContext.tenantName() }} are listed. Edits are saved under
+    <code>tenant:{{ tenantContext.tenantId() }}:users</code> and never affect other tenants.
   </div>
 
   @if (!canEdit && !canDelete) {
-    <p class="rbac-notice">You have view-only access. Admin or Manager role required to edit.</p>
+    <div class="callout warn"><strong>View only:</strong> your role cannot modify users.</div>
+  } @else if (!canDelete) {
+    <div class="callout warn"><strong>Manager access:</strong> you can change roles, but only Admins can remove users.</div>
   }
 
   @if (loading) {
-    <div class="loading">Loading users...</div>
+    <div class="loading" role="status">Loading users…</div>
   } @else {
-    <table class="users-table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Role</th>
-          @if (canEdit || canDelete) {
-            <th>Actions</th>
-          }
-        </tr>
-      </thead>
-      <tbody>
-        @for (user of users; track user.id) {
+    <div class="card table-card">
+      <table class="users-table">
+        <thead>
           <tr>
-            <td>{{ user.name }}</td>
-            <td>{{ user.email }}</td>
-            <td><span class="role-badge">{{ user.role }}</span></td>
+            <th scope="col">Name</th>
+            <th scope="col">Email</th>
+            <th scope="col">Role</th>
             @if (canEdit || canDelete) {
-              <td>
-                @if (canEdit) {
-                  <button type="button" class="btn-sm">Edit</button>
-                }
-                @if (canDelete && user.role !== 'admin') {
-                  <button type="button" class="btn-sm danger">Delete</button>
-                }
-              </td>
+              <th scope="col" class="actions-col">Actions</th>
             }
           </tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          @for (user of users; track user.id) {
+            <tr>
+              <td>
+                {{ user.name }}
+                @if (isSelf(user)) {
+                  <span class="you">(you)</span>
+                }
+              </td>
+              <td class="email">{{ user.email }}</td>
+              <td>
+                @if (editingId === user.id) {
+                  <select [(ngModel)]="editRole" [attr.aria-label]="'Role for ' + user.name">
+                    @for (r of roles; track r) {
+                      <option [value]="r">{{ r }}</option>
+                    }
+                  </select>
+                } @else {
+                  <span class="badge role-{{ user.role }}">{{ user.role }}</span>
+                }
+              </td>
+              @if (canEdit || canDelete) {
+                <td>
+                  <div class="actions">
+                  @if (editingId === user.id) {
+                    <button type="button" class="btn btn-primary btn-sm" (click)="saveEdit(user)">Save</button>
+                    <button type="button" class="btn btn-ghost btn-sm" (click)="editingId = null">Cancel</button>
+                  } @else if (!isSelf(user)) {
+                    @if (canEdit) {
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="startEdit(user)">Edit role</button>
+                    }
+                    @if (canDelete) {
+                      <button type="button" class="btn btn-danger btn-sm" (click)="remove(user)">Remove</button>
+                    }
+                  }
+                  </div>
+                </td>
+              }
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" class="empty">No users in this tenant. Reset tenant data in Settings to restore seed users.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   }
 </div>
