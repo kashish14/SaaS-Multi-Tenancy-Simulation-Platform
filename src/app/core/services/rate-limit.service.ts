@@ -48,10 +48,9 @@ export class RateLimitService {
     return config.requestsUsed < config.requestsPerMinute;
   }
 
+  /** Counts one simulated API request against the active tenant's per-minute quota. */
   recordRequest(): void {
-    const tenantId = this.tenantContext.getTenantId();
-    const key = tenantId ?? 'anon';
-    const state = this.counters.get(key);
-    if (state) state.used++;
+    this.getConfig(); // ensures the current window exists / is reset
+    this.counters.get(this.tenantContext.getTenantId() ?? 'anon')!.used++;
   }
 }

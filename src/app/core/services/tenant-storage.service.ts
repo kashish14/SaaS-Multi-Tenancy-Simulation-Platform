@@ -23,9 +23,7 @@ export class TenantStorageService {
 
   setItem<T>(key: string, value: T): void {
     const tenantKey = this.tenantContext.getTenantStorageKey(key);
-    const serialized =
-      typeof value === 'string' ? value : JSON.stringify(value);
-    localStorage.setItem(tenantKey, serialized);
+    localStorage.setItem(tenantKey, JSON.stringify(value));
   }
 
   removeItem(key: string): void {
@@ -33,15 +31,15 @@ export class TenantStorageService {
     localStorage.removeItem(tenantKey);
   }
 
-  clear(): void {
+  /** All storage keys owned by the active tenant. */
+  keys(): string[] {
     const tenantId = this.tenantContext.getTenantId();
-    if (!tenantId) return;
+    if (!tenantId) return [];
     const prefix = `tenant:${tenantId}:`;
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k?.startsWith(prefix)) keysToRemove.push(k);
-    }
-    keysToRemove.forEach((k) => localStorage.removeItem(k));
+    return Object.keys(localStorage).filter((k) => k.startsWith(prefix));
+  }
+
+  clear(): void {
+    this.keys().forEach((k) => localStorage.removeItem(k));
   }
 }

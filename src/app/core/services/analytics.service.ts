@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, of, delay } from 'rxjs';
 import { TenantContextService } from './tenant-context.service';
+import { RateLimitService } from './rate-limit.service';
 
 export interface MetricPoint {
   label: string;
@@ -29,9 +30,13 @@ export interface AnalyticsSummary {
  */
 @Injectable({ providedIn: 'root' })
 export class AnalyticsService {
-  constructor(private readonly tenantContext: TenantContextService) {}
+  constructor(
+    private readonly tenantContext: TenantContextService,
+    private readonly rateLimit: RateLimitService
+  ) {}
 
   getSummary(): Observable<AnalyticsSummary> {
+    this.rateLimit.recordRequest();
     const tenantId = this.tenantContext.getTenantId();
     const seed = tenantId ? this.hash(tenantId) : 0;
 

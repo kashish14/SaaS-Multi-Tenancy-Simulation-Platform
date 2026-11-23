@@ -1,6 +1,9 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { Observable, BehaviorSubject, map } from 'rxjs';
-import type { Tenant } from '../models/tenant.model';
+import type { SubscriptionPlan, Tenant } from '../models/tenant.model';
+import { MOCK_TENANTS } from '../../data/mock-data';
+
+export const TENANT_KEY = 'auth:current_tenant';
+const TENANTS_KEY = 'platform:tenants';
 
 /**
  * TenantContextService — Central service for tenant isolation.
@@ -9,42 +12,41 @@ import type { Tenant } from '../models/tenant.model';
  */
 @Injectable({ providedIn: 'root' })
 export class TenantContextService {
-  private readonly _currentTenant = new BehaviorSubject<Tenant | null>(null);
-  private readonly _availableTenants = new BehaviorSubject<Tenant[]>([]);
-
-  readonly currentTenant$ = this._currentTenant.asObservable();
-  readonly availableTenants$ = this._availableTenants.asObservable();
-
   readonly currentTenant = signal<Tenant | null>(null);
+  readonly availableTenants = signal<Tenant[]>(readJson<Tenant[]>(TENANTS_KEY) ?? MOCK_TENANTS);
   readonly tenantId = computed(() => this.currentTenant()?.id ?? null);
   readonly tenantName = computed(() => this.currentTenant()?.name ?? 'No Tenant');
-  readonly tenantPlan = computed(() => this.currentTenant()?.plan ?? 'free');
-
-  constructor() {
-    this._currentTenant.pipe(
-      map((t) => t ?? null)
-    ).subscribe((t) => this.currentTenant.set(t));
-  }
+  readonly tenantPlan = computed<SubscriptionPlan>(() => this.currentTenant()?.plan ?? 'free');
 
   setCurrentTenant(tenant: Tenant | null): void {
-    this._currentTenant.next(tenant);
+    this.currentTenant.set(tenant);
+    if (tenant) localStorage.setItem(TENANT_KEY, JSON.stringify(tenant));
+    else localStorage.removeItem(TENANT_KEY);
   }
 
   setAvailableTenants(tenants: Tenant[]): void {
-    this._availableTenants.next(tenants);
+    this.availableTenants.set(tenants);
+    localStorage.setItem(TENANTS_KEY, JSON.stringify(tenants));
   }
 
   switchTenant(tenantId: string): boolean {
-    const tenant = this._availableTenants.value.find((t) => t.id === tenantId);
-    if (tenant) {
-      this.setCurrentTenant(tenant);
-      return true;
-    }
-    return false;
+    const tenant = this.availableTenants().find((t) => t.id === tenantId);
+    if (!tenant) return false;
+    this.setCurrentTenant(tenant);
+    return true;
+  }
+
+  /** Changes the subscription plan of the active tenant (simulated billing change). */
+  setPlan(plan: SubscriptionPlan): void {
+    const current = this.currentTenant();
+    if (!current) return;
+    const updated: Tenant = { ...current, plan };
+    this.setAvailableTenants(this.availableTenants().map((t) => (t.id === updated.id ? updated : t)));
+    this.setCurrentTenant(updated);
   }
 
   getTenantId(): string | null {
-    return this._currentTenant.value?.id ?? null;
+    return this.currentTenant()?.id ?? null;
   }
 
   getTenantStorageKey(prefix: string): string {
@@ -54,6 +56,15 @@ export class TenantContextService {
   }
 
   isTenantActive(): boolean {
-    return this._currentTenant.value !== null;
+    return this.currentTenant() !== null;
+  }
+}
+
+export function readJson<T>(key: string): T | null {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : null;
+  } catch {
+    return null;
   }
 }

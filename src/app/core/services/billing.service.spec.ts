@@ -53,4 +53,14 @@ describe('BillingService', () => {
       done();
     });
   });
+
+  it('should change the tenant plan and re-gate features', (done) => {
+    tenantContext.setAvailableTenants([]);
+    setTenant('free');
+    service.changePlan('pro').subscribe(() => {
+      expect(tenantContext.tenantPlan()).toBe('pro');
+      expect(service.isFeatureAvailable('advancedAnalytics')).toBe(true);
+      done();
+    });
+  });
 });

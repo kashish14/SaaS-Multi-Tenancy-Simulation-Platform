@@ -57,4 +57,11 @@ describe('AccessControlService', () => {
     loginAs('manager');
     expect(service.canAccessRoute(['admin', 'manager'])).toBe(true);
   });
+
+  it('should apply new permissions after a role switch', () => {
+    loginAs('admin');
+    auth.switchRole('user');
+    expect(service.hasPermission('users.view')).toBe(false);
+    expect(service.hasPermission('dashboard.view')).toBe(true);
+  });
 });

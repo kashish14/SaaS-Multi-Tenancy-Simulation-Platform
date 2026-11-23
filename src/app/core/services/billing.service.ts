@@ -1,7 +1,8 @@
-import { Injectable, computed, signal } from '@angular/core';
-import { Observable, of, delay } from 'rxjs';
+import { Injectable, computed } from '@angular/core';
+import { Observable, of, delay, tap } from 'rxjs';
 import type { SubscriptionPlan } from '../models/tenant.model';
 import { TenantContextService } from './tenant-context.service';
+import { RateLimitService } from './rate-limit.service';
 
 export interface SubscriptionPlanConfig {
   id: SubscriptionPlan;
@@ -63,23 +64,29 @@ const PLANS: Record<SubscriptionPlan, SubscriptionPlanConfig> = {
  */
 @Injectable({ providedIn: 'root' })
 export class BillingService {
-  private readonly _usage = signal<UsageMetrics>({
-    users: 0,
-    storageGB: 0,
-    apiCalls: 0,
-    month: new Date().toISOString().slice(0, 7),
+  /** Usage is derived from the active tenant, so it updates on every tenant switch. */
+  private readonly _usage = computed<UsageMetrics>(() => {
+    const tenantId = this.tenantContext.tenantId();
+    const hash = tenantId ? this.hash(tenantId) : 0;
+    return {
+      users: 5 + (hash % 20),
+      storageGB: 2 + (hash % 30),
+      apiCalls: 10000 + (hash % 90000),
+      month: new Date().toISOString().slice(0, 7),
+    };
   });
 
   readonly plans = PLANS;
-  readonly usage = this._usage.asReadonly();
+  readonly usage = this._usage;
   readonly currentPlanConfig = computed(() => {
     const plan = this.tenantContext.tenantPlan();
     return PLANS[plan];
   });
 
-  constructor(private readonly tenantContext: TenantContextService) {
-    this.refreshUsage();
-  }
+  constructor(
+    private readonly tenantContext: TenantContextService,
+    private readonly rateLimit: RateLimitService
+  ) {}
 
   getPlanConfig(plan: SubscriptionPlan): SubscriptionPlanConfig {
     return PLANS[plan];
@@ -102,18 +109,8 @@ export class BillingService {
     }
   }
 
-  refreshUsage(): void {
-    const tenantId = this.tenantContext.getTenantId();
-    const hash = tenantId ? this.hash(tenantId) : 0;
-    this._usage.set({
-      users: 5 + (hash % 20),
-      storageGB: 2 + (hash % 30),
-      apiCalls: 10000 + (hash % 90000),
-      month: new Date().toISOString().slice(0, 7),
-    });
-  }
-
   getBillingSummary(): Observable<BillingSummary> {
+    this.rateLimit.recordRequest();
     const plan = this.tenantContext.tenantPlan();
     const config = PLANS[plan];
     const usage = this._usage();
@@ -137,8 +134,12 @@ export class BillingService {
     }).pipe(delay(300));
   }
 
-  upgradePlan(newPlan: SubscriptionPlan): Observable<boolean> {
-    return of(true).pipe(delay(500));
+  /** Simulates a subscription change: updates the tenant's plan, which re-gates features and limits. */
+  changePlan(newPlan: SubscriptionPlan): Observable<boolean> {
+    return of(true).pipe(
+      delay(500),
+      tap(() => this.tenantContext.setPlan(newPlan))
+    );
   }
 
   private hash(s: string): number {

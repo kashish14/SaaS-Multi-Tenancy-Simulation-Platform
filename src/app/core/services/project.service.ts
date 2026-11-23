@@ -1,13 +1,18 @@
 import { Injectable } from '@angular/core';
 import { Observable, of, delay } from 'rxjs';
 import { TenantContextService } from './tenant-context.service';
+import { RateLimitService } from './rate-limit.service';
 import { MOCK_PROJECTS, type MockProject } from '../../data/mock-data';
 
 @Injectable({ providedIn: 'root' })
 export class ProjectService {
-  constructor(private readonly tenantContext: TenantContextService) {}
+  constructor(
+    private readonly tenantContext: TenantContextService,
+    private readonly rateLimit: RateLimitService
+  ) {}
 
   getProjectsByTenant(): Observable<MockProject[]> {
+    this.rateLimit.recordRequest();
     const tenantId = this.tenantContext.getTenantId();
     const projects = tenantId
       ? MOCK_PROJECTS.filter((p) => p.tenantId === tenantId)
